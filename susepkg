@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""
+Show SUSE package versions
+"""
+
+import argparse
+import logging
+import sys
+from dataclasses import dataclass
+
+import requests
+from requests.exceptions import RequestException
+from packaging.version import Version
+
+
+TIMEOUT = 10
+
+
+@dataclass
+class RPMVersion:
+    """
+    RPM Version
+    """
+
+    version: Version
+    release: str
+
+    def __str__(self):
+        return f"{self.version}-{self.release}"
+
+
+def get_product_id(identifier: str) -> int | None:
+    """
+    Get product ID
+    """
+    url = "https://scc.suse.com/api/package_search/products"
+    try:
+        got = requests.get(url, timeout=TIMEOUT)
+        got.raise_for_status()
+    except RequestException as error:
+        logging.error("%s: %s", url, error)
+        sys.exit(1)
+    products = got.json()["data"]
+
+    for product in products:
+        if product["identifier"] == identifier:
+            return product["id"]
+
+    return None
+
+
+def print_version(package: str, product: str, arch: str, alles: bool = False) -> None:
+    """
+    Print version
+    """
+    product_id = get_product_id(f"{product}/{arch}")
+    if product_id is None:
+        return
+
+    url = f"https://scc.suse.com/api/package_search/packages?query={package}&product_id={product_id}"
+    try:
+        got = requests.get(url, timeout=TIMEOUT)
+        got.raise_for_status()
+    except RequestException as error:
+        logging.error("%s: %s: %s", product, package, error)
+        sys.exit(1)
+    data = got.json()["data"]
+
+    latest: RPMVersion | None = None
+    for info in data:
+        if info["name"] == package:
+            rpm_version = RPMVersion(
+                version=Version(info["version"]), release=info["release"]
+            )
+            if alles:
+                print(rpm_version)
+            elif latest is None or rpm_version.version > latest.version:
+                latest = rpm_version
+
+    if not alles and latest is not None:
+        print(latest)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="susepkg",
+        description="show SUSE package versions",
+    )
+    parser.add_argument("-a", "--all", action="store_true")
+    parser.add_argument(
+        "-A",
+        "--arch",
+        choices=["aarch64", "ppc64le", "s390x", "x86_64"],
+        default="x86_64",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+    )
+    parser.add_argument("-p", "--product")
+    parser.add_argument("package")
+    args = parser.parse_args()
+
+    try:
+        print_version(args.package, args.product, args.arch, args.all)
+    except KeyboardInterrupt:
+        sys.exit(1)
