@@ -1,2 +1,0 @@
-- Support openSUSE
-- Support shell pattern & regular expressions
