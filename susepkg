@@ -42,9 +42,17 @@ def get_product_id(identifier: str) -> int | None:
         sys.exit(1)
     products = got.json()["data"]
 
-    for product in products:
-        if product["identifier"] == identifier:
-            return product["id"]
+    if identifier == "list":
+        for product in sorted(
+            dict.fromkeys(
+                p["identifier"][: p["identifier"].rfind("/")] for p in products
+            )
+        ):
+            print(product)
+    else:
+        for product in products:
+            if product["identifier"] == identifier:
+                return product["id"]
 
     return None
 
@@ -97,11 +105,17 @@ if __name__ == "__main__":
         "--debug",
         action="store_true",
     )
-    parser.add_argument("-p", "--product")
-    parser.add_argument("package")
+    parser.add_argument("-p", "--product", help="product or list")
+    parser.add_argument("package", nargs="?")
     args = parser.parse_args()
 
     try:
-        print_version(args.package, args.product, args.arch, args.all)
+        if args.product == "list":
+            get_product_id("list")
+        elif not args.package:
+            parser.print_help()
+            sys.exit(1)
+        else:
+            print_version(args.package, args.product, args.arch, args.all)
     except KeyboardInterrupt:
         sys.exit(1)

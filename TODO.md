@@ -1,3 +1,2 @@
 - Support openSUSE
-- List valid products with `-p list`
 - Support shell pattern & regular expressions
