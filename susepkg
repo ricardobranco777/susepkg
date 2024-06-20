@@ -6,27 +6,37 @@ Show SUSE package versions
 import argparse
 import logging
 import sys
-from dataclasses import dataclass
+from functools import total_ordering
 
 import requests
 from requests.exceptions import RequestException
-from packaging.version import Version
+import rpm  # type: ignore
 
 
 TIMEOUT = 10
 
 
-@dataclass
+@total_ordering
 class RPMVersion:
     """
-    RPM Version
+    RPMVersion class to compare RPM versions
     """
 
-    version: Version
-    release: str
+    def __init__(self, version: str, release: str):
+        self.version = version
+        self.release = release
+        self._tuple = ('1', version, release)
 
     def __str__(self):
         return f"{self.version}-{self.release}"
+
+    def __lt__(self, other):
+        # pylint: disable=no-member
+        return rpm.labelCompare(self._tuple, other._tuple) < 0
+
+    def __eq__(self, other):
+        # pylint: disable=no-member
+        return rpm.labelCompare(self._tuple, other._tuple) == 0
 
 
 def get_product_id(identifier: str) -> int | None:
@@ -77,9 +87,7 @@ def print_version(package: str, product: str, arch: str, alles: bool = False) ->
     latest: RPMVersion | None = None
     for info in data:
         if info["name"] == package:
-            rpm_version = RPMVersion(
-                version=Version(info["version"]), release=info["release"]
-            )
+            rpm_version = RPMVersion(version=info["version"], release=info["release"])
             if alles:
                 print(rpm_version)
             elif latest is None or rpm_version.version > latest.version:
