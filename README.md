@@ -2,6 +2,8 @@
 
 Show SUSE package versions
 
+Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
+
 ## Requirements
 
 - Python 3.11+
