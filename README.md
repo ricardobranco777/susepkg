@@ -35,7 +35,6 @@ options:
   -h, --help            show this help message and exit
   -a, --all
   -A {aarch64,ppc64le,s390x,x86_64}, --arch {aarch64,ppc64le,s390x,x86_64}
-  --debug
   -i, --insensitive     case insensitive search
   -p PRODUCT, --product PRODUCT
   -x, --regex           search regular expression

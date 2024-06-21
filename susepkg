@@ -144,10 +144,6 @@ if __name__ == "__main__":
         default=platform.machine(),
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-    )
-    parser.add_argument(
         "-i", "--insensitive", action="store_true", help="case insensitive search"
     )
     parser.add_argument("-p", "--product", help="product or list")
