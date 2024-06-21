@@ -24,9 +24,7 @@ $ susepkg -a -p SLE-Micro/5.5 podman
 ## Usage
 
 ```
-usage: susepkg [-h] [-a] [-A {aarch64,ppc64le,s390x,x86_64}] [--debug]
-               [-p PRODUCT]
-               package
+usage: susepkg [-h] [-a] [-A {aarch64,ppc64le,s390x,x86_64}] [--debug] [-i] [-p PRODUCT] [-x] [--version] [package]
 
 show SUSE package versions
 
@@ -38,7 +36,10 @@ options:
   -a, --all
   -A {aarch64,ppc64le,s390x,x86_64}, --arch {aarch64,ppc64le,s390x,x86_64}
   --debug
+  -i, --insensitive     case insensitive search
   -p PRODUCT, --product PRODUCT
+  -x, --regex           search regular expression
+  --version             show program's version number and exit
 ```
 
 Product list

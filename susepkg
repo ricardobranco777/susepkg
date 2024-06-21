@@ -18,6 +18,7 @@ import rpm  # type: ignore
 
 
 TIMEOUT = 10
+VERSION = "0.7"
 
 
 @total_ordering
@@ -152,6 +153,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-x", "--regex", action="store_true", help="search regular expression"
     )
+    parser.add_argument("--version", action="version", version=f"v{VERSION}")
     parser.add_argument("package", nargs="?")
     args = parser.parse_args()
 
