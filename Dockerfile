@@ -7,4 +7,6 @@ RUN	zypper -n install \
 
 COPY	susepkg /susepkg
 
+VOLUME	/root
+
 ENTRYPOINT ["/usr/bin/python3", "/susepkg"]
