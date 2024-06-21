@@ -116,7 +116,3 @@ SUSE-MicroOS/5.0
 SUSE-MicroOS/5.1
 SUSE-MicroOS/5.2
 ```
-
-TODO
-
-- Support openSUSE
