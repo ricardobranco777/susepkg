@@ -11,15 +11,11 @@ Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
 - python3-requests-cache
 - python3-rpm
 
-## Example
+## Example usage
 
 ```
 $ susepkg -a -p SLE-Micro/5.5 podman
-4.4.4-150500.1.4
-4.7.2-150500.3.3.1
-4.8.3-150500.3.6.1
-4.8.3-150500.3.9.1
-4.9.5-150500.3.12.1
+$ susepkg -p any podman
 ```
 
 ## Usage
