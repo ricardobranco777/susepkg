@@ -69,16 +69,15 @@ def get_product_id(identifier: str) -> int | None:
     return None
 
 
-def print_products() -> None:
+def get_products() -> list[str]:
     """
     Print list of products
     """
     url = "https://scc.suse.com/api/package_search/products"
     products = get_data(url)
-    for product in sorted(
+    return sorted(
         dict.fromkeys(p["identifier"][: p["identifier"].rfind("/")] for p in products)
-    ):
-        print(product)
+    )
 
 
 def print_version(
@@ -132,7 +131,10 @@ def get_regex(
     return re.compile(f"{package}$", flags)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """
+    Main function
+    """
     parser = argparse.ArgumentParser(
         prog="susepkg",
         description="show SUSE package versions",
@@ -155,21 +157,26 @@ if __name__ == "__main__":
     parser.add_argument("package", nargs="?")
     args = parser.parse_args()
 
+    if args.product == "list":
+        for product in get_products():
+            print(product)
+    elif not args.package:
+        parser.print_help()
+        sys.exit(1)
+    else:
+        print_version(
+            package=args.package,
+            regex=get_regex(
+                args.package, ignore_case=args.insensitive, is_regex=args.regex
+            ),
+            product=args.product,
+            arch=args.arch,
+            all_versions=args.all,
+        )
+
+
+if __name__ == "__main__":
     try:
-        if args.product == "list":
-            print_products()
-        elif not args.package:
-            parser.print_help()
-            sys.exit(1)
-        else:
-            print_version(
-                package=args.package,
-                regex=get_regex(
-                    args.package, ignore_case=args.insensitive, is_regex=args.regex
-                ),
-                product=args.product,
-                arch=args.arch,
-                all_versions=args.all,
-            )
+        main()
     except KeyboardInterrupt:
         sys.exit(1)
