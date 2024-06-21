@@ -9,6 +9,7 @@ import logging
 import platform
 import re
 import sys
+from collections import UserString
 from datetime import timedelta
 from functools import cache, total_ordering
 from urllib.parse import urlencode
@@ -30,6 +31,17 @@ session = CachedSession(
 
 TIMEOUT = 10
 VERSION = "0.7"
+
+
+class Product(UserString):
+    """
+    Product class to hold product id
+    """
+
+    def __init__(self, name: str, id: int):  # pylint: disable=redefined-builtin
+        self.data = name
+        self.id = id
+        super().__init__(name)
 
 
 @total_ordering
@@ -69,7 +81,7 @@ def get_data(url: str) -> list[dict]:
     return got.json()["data"]
 
 
-def get_product_id(identifier: str) -> int | None:
+def get_product_id(identifier: str) -> int:
     """
     Get product ID
     """
@@ -78,17 +90,17 @@ def get_product_id(identifier: str) -> int | None:
     for product in products:
         if product["identifier"] == identifier:
             return product["id"]
-    return None
+    raise LookupError(f"Not found: {identifier}")
 
 
-def get_products(arch: str) -> list[str]:
+def get_products(arch: str) -> list[Product]:
     """
     Print list of products
     """
     url = "https://scc.suse.com/api/package_search/products"
     products = get_data(url)
     return sorted(
-        p["identifier"][: p["identifier"].rfind("/")]
+        Product(name=p["identifier"][: p["identifier"].rfind("/")], id=p["id"])
         for p in products
         if p["architecture"] == arch
     )
@@ -97,19 +109,14 @@ def get_products(arch: str) -> list[str]:
 def print_version(
     package: str,
     regex: re.Pattern,
-    product: str,
-    arch: str,
+    product: Product,
     all_versions: bool = False,
 ) -> None:
     """
     Print version
     """
-    product_id = get_product_id(f"{product}/{arch}")
-    if product_id is None:
-        return
-
     url = "https://scc.suse.com/api/package_search/packages"
-    query_params: dict[str, int | str] = {"product_id": product_id}
+    query_params: dict[str, int | str] = {"product_id": product.id}
     if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
         query_params["query"] = package
     url = f"{url}?{urlencode(query_params)}"
@@ -178,7 +185,14 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
     else:
-        products = get_products(args.arch) if args.product == "any" else [args.product]
+        if args.product == "any":
+            products = get_products(args.arch)
+        else:
+            products = [
+                Product(
+                    name=args.product, id=get_product_id(f"{args.product}/{args.arch}")
+                )
+            ]
         regex = get_regex(
             args.package, ignore_case=args.insensitive, is_regex=args.regex
         )
@@ -187,7 +201,6 @@ def main() -> None:
                 package=args.package,
                 regex=regex,
                 product=product,
-                arch=args.arch,
                 all_versions=args.all,
             )
 
