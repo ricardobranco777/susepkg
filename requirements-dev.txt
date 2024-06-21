@@ -1,3 +1,4 @@
 requests
 requests-cache
+requests-toolbelt
 rpm

@@ -9,6 +9,7 @@ Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
 - Python 3.11+
 - python3-requests
 - python3-requests-cache
+- python3-requests-toolbelt
 - python3-rpm
 
 ## Example usage

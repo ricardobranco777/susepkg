@@ -6,6 +6,7 @@ idna==3.7
 platformdirs==4.2.2
 requests==2.32.3
 requests-cache==1.2.1
+requests-toolbelt==1.0.0
 rpm==0.1.0
 six==1.16.0
 url-normalize==1.4.3
