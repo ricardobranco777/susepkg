@@ -69,14 +69,16 @@ def get_product_id(identifier: str) -> int | None:
     return None
 
 
-def get_products() -> list[str]:
+def get_products(arch: str) -> list[str]:
     """
     Print list of products
     """
     url = "https://scc.suse.com/api/package_search/products"
     products = get_data(url)
     return sorted(
-        dict.fromkeys(p["identifier"][: p["identifier"].rfind("/")] for p in products)
+        p["identifier"][: p["identifier"].rfind("/")]
+        for p in products
+        if p["architecture"] == arch
     )
 
 
@@ -158,7 +160,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.product == "list":
-        for product in get_products():
+        for product in get_products(args.arch):
             print(product)
     elif not args.package:
         parser.print_help()
