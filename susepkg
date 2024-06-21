@@ -30,7 +30,7 @@ session = CachedSession(
 
 
 TIMEOUT = 30
-VERSION = "0.8"
+VERSION = "0.9"
 
 
 class Product(UserString):
