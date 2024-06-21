@@ -136,7 +136,7 @@ if __name__ == "__main__":
         prog="susepkg",
         description="show SUSE package versions",
     )
-    parser.add_argument("-a", "--all", action="store_true", help="all versions")
+    parser.add_argument("-a", "--all", action="store_true", help="show all versions")
     parser.add_argument(
         "-A",
         "--arch",
