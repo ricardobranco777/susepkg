@@ -44,18 +44,25 @@ class RPMVersion:
         return rpm.labelCompare(self._tuple, other._tuple) == 0
 
 
-def get_product_id(identifier: str) -> int | None:
+def get_data(url: str) -> list[dict]:
     """
-    Get product ID
+    Get data from URL
     """
-    url = "https://scc.suse.com/api/package_search/products"
     try:
         got = requests.get(url, timeout=TIMEOUT)
         got.raise_for_status()
     except RequestException as error:
         logging.error("%s: %s", url, error)
         sys.exit(1)
-    products = got.json()["data"]
+    return got.json()["data"]
+
+
+def get_product_id(identifier: str) -> int | None:
+    """
+    Get product ID
+    """
+    url = "https://scc.suse.com/api/package_search/products"
+    products = get_data(url)
 
     if identifier == "list":
         for product in sorted(
@@ -92,13 +99,7 @@ def print_version(
         query_params["query"] = package
     url = f"{url}?{urlencode(query_params)}"
 
-    try:
-        got = requests.get(url, timeout=TIMEOUT)
-        got.raise_for_status()
-    except RequestException as error:
-        logging.error("%s: %s: %s", product, package, error)
-        sys.exit(1)
-    data = got.json()["data"]
+    data = get_data(url)
 
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
