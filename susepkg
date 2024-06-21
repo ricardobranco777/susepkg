@@ -5,7 +5,6 @@ Show SUSE package versions
 
 import argparse
 import fnmatch
-import logging
 import platform
 import re
 import os
@@ -87,8 +86,7 @@ def get_data(url: str) -> list[dict]:
         got = session.get(url, timeout=TIMEOUT)
         got.raise_for_status()
     except RequestException as error:
-        logging.error("%s: %s", url, error)
-        sys.exit(1)
+        sys.exit(f"ERROR: {url}: {error}")
     return got.json()["data"]
 
 
