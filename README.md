@@ -37,7 +37,7 @@ options:
   -A {aarch64,ppc64le,s390x,x86_64}, --arch {aarch64,ppc64le,s390x,x86_64}
   -i, --insensitive     case insensitive search
   -p PRODUCT, --product PRODUCT
-                        product or list
+                        product or list or any
   -x, --regex           search regular expression
   --version             show program's version number and exit
 ```

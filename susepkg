@@ -9,7 +9,7 @@ import logging
 import platform
 import re
 import sys
-from functools import total_ordering
+from functools import cache, total_ordering
 from urllib.parse import urlencode
 
 import requests
@@ -44,6 +44,7 @@ class RPMVersion:
         return rpm.labelCompare(self._tuple, other._tuple) == 0
 
 
+@cache
 def get_data(url: str) -> list[dict]:
     """
     Get data from URL
@@ -110,13 +111,13 @@ def print_version(
     ):
         rpm_version = RPMVersion(info["version"], info["release"])
         if all_versions:
-            print(info["name"], rpm_version)
+            print(product, info["name"], rpm_version)
         else:
             latest[info["name"]] = rpm_version
 
     if not all_versions:
         for name, rpm_version in latest.items():
-            print(name, rpm_version)
+            print(product, name, rpm_version)
 
 
 def get_regex(
@@ -151,7 +152,7 @@ def main() -> None:
     parser.add_argument(
         "-i", "--insensitive", action="store_true", help="case insensitive search"
     )
-    parser.add_argument("-p", "--product", help="product or list")
+    parser.add_argument("-p", "--product", help="product or list or any")
     parser.add_argument(
         "-x", "--regex", action="store_true", help="search regular expression"
     )
@@ -166,15 +167,18 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
     else:
-        print_version(
-            package=args.package,
-            regex=get_regex(
-                args.package, ignore_case=args.insensitive, is_regex=args.regex
-            ),
-            product=args.product,
-            arch=args.arch,
-            all_versions=args.all,
+        products = get_products(args.arch) if args.product == "any" else [args.product]
+        regex = get_regex(
+            args.package, ignore_case=args.insensitive, is_regex=args.regex
         )
+        for product in products:
+            print_version(
+                package=args.package,
+                regex=regex,
+                product=product,
+                arch=args.arch,
+                all_versions=args.all,
+            )
 
 
 if __name__ == "__main__":
