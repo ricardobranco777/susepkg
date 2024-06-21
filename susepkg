@@ -63,20 +63,22 @@ def get_product_id(identifier: str) -> int | None:
     """
     url = "https://scc.suse.com/api/package_search/products"
     products = get_data(url)
-
-    if identifier == "list":
-        for product in sorted(
-            dict.fromkeys(
-                p["identifier"][: p["identifier"].rfind("/")] for p in products
-            )
-        ):
-            print(product)
-    else:
-        for product in products:
-            if product["identifier"] == identifier:
-                return product["id"]
-
+    for product in products:
+        if product["identifier"] == identifier:
+            return product["id"]
     return None
+
+
+def print_products() -> None:
+    """
+    Print list of products
+    """
+    url = "https://scc.suse.com/api/package_search/products"
+    products = get_data(url)
+    for product in sorted(
+        dict.fromkeys(p["identifier"][: p["identifier"].rfind("/")] for p in products)
+    ):
+        print(product)
 
 
 def print_version(
@@ -98,7 +100,6 @@ def print_version(
     if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
         query_params["query"] = package
     url = f"{url}?{urlencode(query_params)}"
-
     data = get_data(url)
 
     latest: dict[str, RPMVersion] = {}
@@ -156,7 +157,7 @@ if __name__ == "__main__":
 
     try:
         if args.product == "list":
-            get_product_id("list")
+            print_products()
         elif not args.package:
             parser.print_help()
             sys.exit(1)
