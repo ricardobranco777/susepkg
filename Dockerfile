@@ -6,7 +6,8 @@ RUN	zypper -n install \
 		python3-requests \
 		python3-requests-cache \
 		python3-requests-toolbelt \
-		python3-rpm
+		python3-rpm && \
+	zypper clean -a
 
 COPY	susepkg /susepkg
 
