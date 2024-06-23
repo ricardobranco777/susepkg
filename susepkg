@@ -34,7 +34,7 @@ session = CachedSession(
 )
 
 
-TIMEOUT = 60
+TIMEOUT = 180
 VERSION = "0.9"
 
 
