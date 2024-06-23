@@ -40,25 +40,47 @@ VERSION = "0.9"
 
 class Product(UserString):
     """
-    Product class to hold product identifier & arch
+    Product class to hold product identifier
     """
 
-    def __init__(self, name: str, ident: int | None = None, arch: str | None = None):
+    _products: list[dict] = []
+
+    def __init__(
+        self, name: str, ident: int | None = None, arch: str | None = None
+    ) -> None:
         self.data = name
         self.id = ident or self._get_product_id(f"{name}/{arch}")
         super().__init__(name)
 
     @staticmethod
-    def _get_product_id(identifier: str) -> int:
+    def _get_products() -> list[dict]:
+        url = "https://scc.suse.com/api/package_search/products"
+        return get_data(url)
+
+    @classmethod
+    def _get_product_id(cls, identifier: str) -> int:
         """
         Get product ID
         """
-        url = "https://scc.suse.com/api/package_search/products"
-        products = get_data(url)
-        for product in products:
+        if not cls._products:
+            cls._products = cls._get_products()
+        for product in cls._products:
             if product["identifier"] == identifier:
                 return product["id"]
         raise LookupError(f"Not found: {identifier}")
+
+    @classmethod
+    def get_products(cls, arch: str) -> list["Product"]:
+        """
+        Get list of products
+        """
+        if not cls._products:
+            cls._products = cls._get_products()
+        return sorted(
+            cls(name=p["identifier"].removesuffix(f"/{arch}"), ident=p["id"], arch=arch)
+            for p in cls._products
+            if p["architecture"] == arch
+        )
 
 
 @total_ordering
@@ -67,19 +89,19 @@ class RPMVersion:
     RPMVersion class to compare RPM versions
     """
 
-    def __init__(self, version: str, release: str):
+    def __init__(self, version: str, release: str) -> None:
         self.version = version
         self.release = release
         self._tuple = ("1", version, release)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.version}-{self.release}"
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         # pylint: disable=no-member
         return rpm.labelCompare(self._tuple, other._tuple) < 0
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         # pylint: disable=no-member
         return rpm.labelCompare(self._tuple, other._tuple) == 0
 
@@ -105,19 +127,6 @@ def get_data(url: str) -> list[dict]:
         logging.error("%s: %s", url, error)
         raise
     return got.json()["data"]
-
-
-def get_products(arch: str) -> list[Product]:
-    """
-    Print list of products
-    """
-    url = "https://scc.suse.com/api/package_search/products"
-    products = get_data(url)
-    return sorted(
-        Product(name=p["identifier"].removesuffix(f"/{arch}"), ident=p["id"], arch=arch)
-        for p in products
-        if p["architecture"] == arch
-    )
 
 
 def fetch_versions(
@@ -162,7 +171,7 @@ def print_version(
     """
     try:
         if product_name == "any":
-            products = get_products(arch)
+            products = Product.get_products(arch)
         else:
             products = [Product(name=product_name, arch=arch)]
     except RequestException:
@@ -225,7 +234,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.product == "list":
-        for product in get_products(args.arch):
+        for product in Product.get_products(args.arch):
             print(product)
     elif not args.package:
         parser.print_help()
