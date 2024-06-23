@@ -35,13 +35,25 @@ VERSION = "0.9"
 
 class Product(UserString):
     """
-    Product class to hold product id
+    Product class to hold product identifier & arch
     """
 
-    def __init__(self, name: str, id: int):  # pylint: disable=redefined-builtin
+    def __init__(self, name: str, ident: int | None = None, arch: str | None = None):
         self.data = name
-        self.id = id
+        self.id = ident or self._get_product_id(f"{name}/{arch}")
         super().__init__(name)
+
+    @staticmethod
+    def _get_product_id(identifier: str) -> int:
+        """
+        Get product ID
+        """
+        url = "https://scc.suse.com/api/package_search/products"
+        products = get_data(url)
+        for product in products:
+            if product["identifier"] == identifier:
+                return product["id"]
+        raise LookupError(f"Not found: {identifier}")
 
 
 @total_ordering
@@ -90,18 +102,6 @@ def get_data(url: str) -> list[dict]:
     return got.json()["data"]
 
 
-def get_product_id(identifier: str) -> int:
-    """
-    Get product ID
-    """
-    url = "https://scc.suse.com/api/package_search/products"
-    products = get_data(url)
-    for product in products:
-        if product["identifier"] == identifier:
-            return product["id"]
-    raise LookupError(f"Not found: {identifier}")
-
-
 def get_products(arch: str) -> list[Product]:
     """
     Print list of products
@@ -109,7 +109,7 @@ def get_products(arch: str) -> list[Product]:
     url = "https://scc.suse.com/api/package_search/products"
     products = get_data(url)
     return sorted(
-        Product(name=p["identifier"].removesuffix(f"/{arch}"), id=p["id"])
+        Product(name=p["identifier"].removesuffix(f"/{arch}"), ident=p["id"], arch=arch)
         for p in products
         if p["architecture"] == arch
     )
@@ -117,34 +117,41 @@ def get_products(arch: str) -> list[Product]:
 
 def print_version(
     package: str,
+    arch: str,
     regex: re.Pattern,
-    product: Product,
+    product_name: str,
     all_versions: bool = False,
 ) -> None:
     """
     Print version
     """
-    url = "https://scc.suse.com/api/package_search/packages"
-    query_params: dict[str, int | str] = {"product_id": product.id}
-    if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
-        query_params["query"] = package
-    url = f"{url}?{urlencode(query_params)}"
-    data = get_data(url)
+    if product_name == "any":
+        products = get_products(arch)
+    else:
+        products = [Product(name=product_name, arch=arch)]
 
-    latest: dict[str, RPMVersion] = {}
-    for info in sorted(
-        filter(lambda i: regex.match(i["name"]), data),
-        key=lambda i: (i["name"], RPMVersion(i["version"], i["release"])),
-    ):
-        rpm_version = RPMVersion(info["version"], info["release"])
-        if all_versions:
-            print(product, info["name"], rpm_version)
-        else:
-            latest[info["name"]] = rpm_version
+    for product in products:
+        url = "https://scc.suse.com/api/package_search/packages"
+        query_params: dict[str, int | str] = {"product_id": product.id}
+        if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
+            query_params["query"] = package
+        url = f"{url}?{urlencode(query_params)}"
+        data = get_data(url)
 
-    if not all_versions:
-        for name, rpm_version in latest.items():
-            print(product, name, rpm_version)
+        latest: dict[str, RPMVersion] = {}
+        for info in sorted(
+            filter(lambda i: regex.match(i["name"]), data),
+            key=lambda i: (i["name"], RPMVersion(i["version"], i["release"])),
+        ):
+            rpm_version = RPMVersion(info["version"], info["release"])
+            if all_versions:
+                print(product, info["name"], rpm_version)
+            else:
+                latest[info["name"]] = rpm_version
+
+        if not all_versions:
+            for name, rpm_version in latest.items():
+                print(product, name, rpm_version)
 
 
 def get_regex(
@@ -194,22 +201,14 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
     else:
-        if args.product == "any":
-            products = get_products(args.arch)
-        else:
-            products = [
-                Product(
-                    name=args.product, id=get_product_id(f"{args.product}/{args.arch}")
-                )
-            ]
         regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
-        for product in products:
-            print_version(
-                package=args.package,
-                regex=regex,
-                product=product,
-                all_versions=args.all,
-            )
+        print_version(
+            package=args.package,
+            arch=args.arch,
+            regex=regex,
+            product_name=args.product,
+            all_versions=args.all,
+        )
 
 
 if __name__ == "__main__":
