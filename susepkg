@@ -13,7 +13,7 @@ import sys
 from collections import UserString
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from functools import cache, total_ordering
+from functools import total_ordering
 from urllib.parse import urlencode
 
 import rpm  # type: ignore
@@ -94,7 +94,6 @@ def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
     return got
 
 
-@cache
 def get_data(url: str) -> list[dict]:
     """
     Get data from URL
