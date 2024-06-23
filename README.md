@@ -1,6 +1,6 @@
 # susepkg
 
-Show SUSE package versions
+Show SUSE package versions using [documented API](https://scc.suse.com/api/package_search/v4/documentation)
 
 Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
 
