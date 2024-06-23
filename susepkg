@@ -5,11 +5,13 @@ Show SUSE package versions
 
 import argparse
 import fnmatch
+import logging
 import platform
 import re
 import os
 import sys
 from collections import UserString
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import cache, total_ordering
 from urllib.parse import urlencode
@@ -23,13 +25,16 @@ from requests_cache import CachedSession
 
 session = CachedSession(
     "susepkg.cache",
+    # Cannot use sqlite3 with multi-threading on Python 3.12 due to:
+    # https://github.com/requests-cache/requests-cache/issues/845
+    backend="filesystem" if sys.version_info.minor >= 12 else "sqlite3",
     cache_control=True,
-    expire_after=timedelta(days=1),
+    expire_after=timedelta(days=3),
     use_cache_dir=True,
 )
 
 
-TIMEOUT = 30
+TIMEOUT = 60
 VERSION = "0.9"
 
 
@@ -98,7 +103,8 @@ def get_data(url: str) -> list[dict]:
         got = session.get(url, timeout=TIMEOUT)
         got.raise_for_status()
     except RequestException as error:
-        sys.exit(f"ERROR: {url}: {error}")
+        logging.error("%s: %s", url, error)
+        raise
     return got.json()["data"]
 
 
@@ -115,6 +121,36 @@ def get_products(arch: str) -> list[Product]:
     )
 
 
+def fetch_versions(
+    product: Product, package: str, regex: re.Pattern, all_versions: bool
+) -> list[str]:
+    """
+    Fetch package versions for a single product.
+    """
+    url = "https://scc.suse.com/api/package_search/packages"
+    query_params: dict[str, int | str] = {"product_id": product.id}
+    if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
+        query_params["query"] = package
+    url = f"{url}?{urlencode(query_params)}"
+    data = get_data(url)
+
+    lines = []
+    latest: dict[str, RPMVersion] = {}
+    for info in sorted(
+        filter(lambda i: regex.match(i["name"]), data),
+        key=lambda i: (i["name"], RPMVersion(i["version"], i["release"])),
+    ):
+        rpm_version = RPMVersion(info["version"], info["release"])
+        if all_versions:
+            lines.append(f'{product} {info["name"]} {rpm_version}')
+        else:
+            latest[info["name"]] = rpm_version
+    if not all_versions:
+        for name, rpm_version in latest.items():
+            lines.append(f"{product} {name} {rpm_version}")
+    return lines
+
+
 def print_version(
     package: str,
     arch: str,
@@ -125,33 +161,28 @@ def print_version(
     """
     Print version
     """
-    if product_name == "any":
-        products = get_products(arch)
-    else:
-        products = [Product(name=product_name, arch=arch)]
+    try:
+        if product_name == "any":
+            products = get_products(arch)
+        else:
+            products = [Product(name=product_name, arch=arch)]
+    except RequestException:
+        sys.exit(1)
 
-    for product in products:
-        url = "https://scc.suse.com/api/package_search/packages"
-        query_params: dict[str, int | str] = {"product_id": product.id}
-        if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
-            query_params["query"] = package
-        url = f"{url}?{urlencode(query_params)}"
-        data = get_data(url)
-
-        latest: dict[str, RPMVersion] = {}
-        for info in sorted(
-            filter(lambda i: regex.match(i["name"]), data),
-            key=lambda i: (i["name"], RPMVersion(i["version"], i["release"])),
-        ):
-            rpm_version = RPMVersion(info["version"], info["release"])
-            if all_versions:
-                print(product, info["name"], rpm_version)
-            else:
-                latest[info["name"]] = rpm_version
-
-        if not all_versions:
-            for name, rpm_version in latest.items():
-                print(product, name, rpm_version)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(fetch_versions, product, package, regex, all_versions)
+            for product in products
+        ]
+        for future in futures:
+            try:
+                lines = future.result()
+                for line in lines:
+                    print(line)
+            except RequestException:
+                pass
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                print(f"ERROR: {exc}", file=sys.stderr)
 
 
 def get_regex(
@@ -214,6 +245,7 @@ def main() -> None:
 if __name__ == "__main__":
     if os.getenv("DEBUG"):
         session.hooks["response"].append(debugme)
+    logging.basicConfig(format="%(levelname)-8s %(message)s", stream=sys.stderr)
     try:
         main()
     except KeyboardInterrupt:
