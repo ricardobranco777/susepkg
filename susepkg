@@ -18,7 +18,15 @@ from urllib.parse import urlencode
 
 import rpm  # type: ignore
 from requests.exceptions import RequestException
-from requests_toolbelt.utils import dump  # type: ignore
+
+try:
+    from requests_toolbelt.utils import dump  # type: ignore
+except ModuleNotFoundError:
+
+    def dump():
+        "Fake dump"
+
+    dump.dump_all = lambda _: bytes()
 
 # Creates cache.sqlite
 from requests_cache import CachedSession
