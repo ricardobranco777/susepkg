@@ -147,16 +147,16 @@ def print_version(
     package: str,
     arch: str,
     regex: re.Pattern,
-    product: str,
+    product_list: list[str],
 ) -> None:
     """
     Print version
     """
     try:
-        if product == "any":
+        if len(product_list) == 0:
             products = Product.get_products(arch)
         else:
-            products = [Product(name=product, arch=arch)]
+            products = [Product(name=product, arch=arch) for product in product_list]
     except RequestException:
         sys.exit(1)
 
@@ -207,7 +207,13 @@ def main() -> None:
     parser.add_argument(
         "-i", "--insensitive", action="store_true", help="case insensitive search"
     )
-    parser.add_argument("-p", "--product", required=True, help="product or list or any")
+    parser.add_argument(
+        "-p",
+        "--product",
+        action="append",
+        required=True,
+        help="product or 'list' or 'any'. May be specified multiple times",
+    )
     parser.add_argument(
         "-x", "--regex", action="store_true", help="search regular expression"
     )
@@ -215,16 +221,18 @@ def main() -> None:
     parser.add_argument("package", nargs="?")
     args = parser.parse_args()
 
-    if args.product == "list":
+    if args.product == ["list"]:
         for product in Product.get_products(args.arch):
             print(product)
     elif not args.package:
         parser.print_help()
         sys.exit(1)
     else:
+        if args.product == ["any"]:
+            args.product.pop()
         regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
         print_version(
-            package=args.package, arch=args.arch, regex=regex, product=args.product
+            package=args.package, arch=args.arch, regex=regex, product_list=args.product
         )
 
 
