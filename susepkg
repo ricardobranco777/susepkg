@@ -38,14 +38,14 @@ VERSION = "1.1"
 
 class Product(UserString):
     """
-    Product class to hold product identifier
+    Product class
     """
 
     def __init__(
-        self, name: str, ident: int | None = None, arch: str | None = None
+        self, name: str, id_: int | None = None, arch: str | None = None
     ) -> None:
         self.data = name
-        self.id = ident or self._get_product_id(f"{name}/{arch}")
+        self.id = id_ or self._get_product_id(f"{name}/{arch}")
         super().__init__(name)
 
     @staticmethod
@@ -70,7 +70,7 @@ class Product(UserString):
         Get list of products
         """
         return sorted(
-            cls(name=p["identifier"].removesuffix(f"/{arch}"), ident=p["id"], arch=arch)
+            cls(name=p["identifier"].removesuffix(f"/{arch}"), id_=p["id"], arch=arch)
             for p in cls._get_products()
             if p["architecture"] == arch
         )
