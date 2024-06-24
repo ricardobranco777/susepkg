@@ -19,8 +19,6 @@ from urllib.parse import urlencode
 import rpm  # type: ignore
 from requests.exceptions import RequestException
 from requests_toolbelt.utils import dump  # type: ignore
-
-# Creates cache.sqlite
 from requests_cache import CachedSession
 
 session = CachedSession(
