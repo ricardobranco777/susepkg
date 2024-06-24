@@ -13,7 +13,7 @@ import sys
 from collections import UserString
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from functools import total_ordering
+from functools import cache, total_ordering
 from urllib.parse import urlencode
 
 import rpm  # type: ignore
@@ -41,8 +41,6 @@ class Product(UserString):
     Product class to hold product identifier
     """
 
-    _products: list[dict] = []
-
     def __init__(
         self, name: str, ident: int | None = None, arch: str | None = None
     ) -> None:
@@ -51,6 +49,7 @@ class Product(UserString):
         super().__init__(name)
 
     @staticmethod
+    @cache
     def _get_products() -> list[dict]:
         url = "https://scc.suse.com/api/package_search/products"
         return get_data(url)
@@ -60,9 +59,7 @@ class Product(UserString):
         """
         Get product ID
         """
-        if not cls._products:
-            cls._products = cls._get_products()
-        for product in cls._products:
+        for product in cls._get_products():
             if product["identifier"] == identifier:
                 return product["id"]
         raise LookupError(f"Not found: {identifier}")
@@ -72,11 +69,9 @@ class Product(UserString):
         """
         Get list of products
         """
-        if not cls._products:
-            cls._products = cls._get_products()
         return sorted(
             cls(name=p["identifier"].removesuffix(f"/{arch}"), ident=p["id"], arch=arch)
-            for p in cls._products
+            for p in cls._get_products()
             if p["architecture"] == arch
         )
 
