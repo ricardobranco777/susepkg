@@ -127,11 +127,9 @@ def get_data(url: str) -> list[dict]:
     return got.json()["data"]
 
 
-def fetch_versions(
-    product: Product, package: str, regex: re.Pattern, all_versions: bool
-) -> list[str]:
+def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str]:
     """
-    Fetch package versions for a single product.
+    Fetch latest package version for a single product
     """
     url = "https://scc.suse.com/api/package_search/packages"
     query_params: dict[str, int | str] = {"product_id": product.id}
@@ -140,44 +138,36 @@ def fetch_versions(
     url = f"{url}?{urlencode(query_params)}"
     data = get_data(url)
 
-    lines = []
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
         filter(lambda i: regex.match(i["name"]), data),
         key=lambda i: (i["name"], RPMVersion(i["version"], i["release"])),
     ):
-        rpm_version = RPMVersion(info["version"], info["release"])
-        if all_versions:
-            lines.append(f'{product} {info["name"]} {rpm_version}')
-        else:
-            latest[info["name"]] = rpm_version
-    if not all_versions:
-        for name, rpm_version in latest.items():
-            lines.append(f"{product} {name} {rpm_version}")
-    return lines
+        latest[info["name"]] = RPMVersion(info["version"], info["release"])
+
+    return [f"{product} {name} {rpm_version}" for name, rpm_version in latest.items()]
 
 
 def print_version(
     package: str,
     arch: str,
     regex: re.Pattern,
-    product_name: str,
-    all_versions: bool = False,
+    product: str,
 ) -> None:
     """
     Print version
     """
     try:
-        if product_name == "any":
+        if product == "any":
             products = Product.get_products(arch)
         else:
-            products = [Product(name=product_name, arch=arch)]
+            products = [Product(name=product, arch=arch)]
     except RequestException:
         sys.exit(1)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [
-            executor.submit(fetch_versions, product, package, regex, all_versions)
+            executor.submit(fetch_version, product, package, regex)
             for product in products
         ]
         for future in futures:
@@ -213,9 +203,8 @@ def main() -> None:
         prog="susepkg",
         description="show SUSE package versions",
     )
-    parser.add_argument("-a", "--all", action="store_true", help="show all versions")
     parser.add_argument(
-        "-A",
+        "-a",
         "--arch",
         choices=["aarch64", "ppc64le", "s390x", "x86_64"],
         default=platform.machine(),
@@ -240,11 +229,7 @@ def main() -> None:
     else:
         regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
         print_version(
-            package=args.package,
-            arch=args.arch,
-            regex=regex,
-            product_name=args.product,
-            all_versions=args.all,
+            package=args.package, arch=args.arch, regex=regex, product=args.product
         )
 
 

@@ -31,8 +31,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -a, --all             show all versions
-  -A {aarch64,ppc64le,s390x,x86_64}, --arch {aarch64,ppc64le,s390x,x86_64}
+  -a {aarch64,ppc64le,s390x,x86_64}, --arch {aarch64,ppc64le,s390x,x86_64}
   -i, --insensitive     case insensitive search
   -p PRODUCT, --product PRODUCT
                         product or list or any
