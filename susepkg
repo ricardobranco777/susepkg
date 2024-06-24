@@ -56,9 +56,6 @@ class Product(UserString):
 
     @classmethod
     def _get_product_id(cls, identifier: str) -> int:
-        """
-        Get product ID
-        """
         for product in cls._get_products():
             if product["identifier"] == identifier:
                 return product["id"]
@@ -124,7 +121,7 @@ def get_data(url: str) -> list[dict]:
 
 def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str]:
     """
-    Fetch latest package version for a single product
+    Fetch latest package version for the specified product
     """
     url = "https://scc.suse.com/api/package_search/packages"
     query_params: dict[str, int | str] = {"product_id": product.id}
@@ -144,10 +141,7 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
 
 
 def print_version(
-    package: str,
-    arch: str,
-    regex: re.Pattern,
-    product_list: list[str],
+    package: str, arch: str, regex: re.Pattern, product_list: list[str]
 ) -> None:
     """
     Print version
@@ -157,6 +151,8 @@ def print_version(
             products = Product.get_products(arch)
         else:
             products = [Product(name=product, arch=arch) for product in product_list]
+    except LookupError as exc:
+        sys.exit(f"{exc}")
     except RequestException:
         sys.exit(1)
 
