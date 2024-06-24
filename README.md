@@ -22,7 +22,7 @@ $ susepkg -p any podman
 ## Usage
 
 ```
-usage: susepkg [-h] [-a] [-A {aarch64,ppc64le,s390x,x86_64}] [--debug] [-i] [-p PRODUCT] [-x] [--version] [package]
+usage: susepkg [-h] [-a {aarch64,ppc64le,s390x,x86_64}] [-i] -p PRODUCT [-x] [--version] [package]
 
 show SUSE package versions
 

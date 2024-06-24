@@ -207,7 +207,7 @@ def main() -> None:
     parser.add_argument(
         "-i", "--insensitive", action="store_true", help="case insensitive search"
     )
-    parser.add_argument("-p", "--product", help="product or list or any")
+    parser.add_argument("-p", "--product", required=True, help="product or list or any")
     parser.add_argument(
         "-x", "--regex", action="store_true", help="search regular expression"
     )
