@@ -14,7 +14,6 @@ from collections import UserString
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import cache, total_ordering
-from urllib.parse import urlencode
 
 import rpm  # type: ignore
 from requests.exceptions import RequestException
@@ -106,12 +105,12 @@ def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
     return got
 
 
-def get_data(url: str) -> list[dict]:
+def get_data(url: str, params: dict[str, str | int] | None = None) -> list[dict]:
     """
     Get data from URL
     """
     try:
-        got = session.get(url, timeout=TIMEOUT)
+        got = session.get(url, params=params, timeout=TIMEOUT)
         got.raise_for_status()
     except RequestException as error:
         logging.error("%s: %s", url, error)
@@ -124,11 +123,10 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     Fetch latest package version for the specified product
     """
     url = "https://scc.suse.com/api/package_search/packages"
-    query_params: dict[str, int | str] = {"product_id": product.id}
+    params: dict[str, str | int] = {"product_id": product.id}
     if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
-        query_params["query"] = package
-    url = f"{url}?{urlencode(query_params)}"
-    data = get_data(url)
+        params["query"] = package
+    data = get_data(url, params=params)
 
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
