@@ -118,9 +118,10 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     Fetch latest package version for the specified product
     """
     url = "https://scc.suse.com/api/package_search/packages"
-    params: dict[str, str | int] = {"product_id": product.id}
-    if regex.pattern == f"{package}$" and not regex.flags & re.IGNORECASE:
-        params["query"] = package
+    params: dict[str, str | int] = {
+        "query": package,
+        "product_id": product.id,
+    }
     data = get_data(url, params=params)
 
     latest: dict[str, RPMVersion] = {}
@@ -179,6 +180,17 @@ def get_regex(
     return re.compile(f"{package}$", flags)
 
 
+def get_name(string: str) -> str | None:
+    """
+    Get package name from string that may be a regular expression
+    """
+    pattern = r"[\w-]+"
+    matches = re.findall(pattern, string, re.ASCII)
+    if matches:
+        return max(matches, key=len)
+    return None
+
+
 def main() -> None:
     """
     Main function
@@ -220,8 +232,11 @@ def main() -> None:
         if args.product == ["any"]:
             args.product.pop()
         regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
+        package = get_name(args.package)
+        if package is None:
+            sys.exit(f"Invalid package: {args.package}")
         print_version(
-            package=args.package, arch=args.arch, regex=regex, product_list=args.product
+            package=package, arch=args.arch, regex=regex, product_list=args.product
         )
 
 
