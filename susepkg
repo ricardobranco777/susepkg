@@ -219,7 +219,9 @@ def main() -> None:
         "-x", "--regex", action="store_true", help="search regular expression"
     )
     parser.add_argument("--version", action="version", version=f"v{VERSION}")
-    parser.add_argument("package", nargs="?")
+    parser.add_argument(
+        "package", nargs="?", help="may be a shell pattern or regular expression"
+    )
     args = parser.parse_args()
 
     if args.product == ["list"]:

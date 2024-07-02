@@ -25,7 +25,7 @@ usage: susepkg [-h] [-a {aarch64,ppc64le,s390x,x86_64}] [-i] -p PRODUCT [-x] [--
 show SUSE package versions
 
 positional arguments:
-  package
+  package               may be a shell pattern or regular expression
 
 options:
   -h, --help            show this help message and exit
