@@ -10,13 +10,6 @@ Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
 - python3-requests
 - python3-rpm
 
-## Example usage
-
-```
-$ susepkg -a -p SLE-Micro/5.5 podman
-$ susepkg -p any podman
-```
-
 ## Usage
 
 ```
@@ -37,7 +30,13 @@ options:
   --version             show program's version number and exit
 ```
 
-Product list
+## Example usage
+
+- `susepkg -p any podman`
+- `susepkg -p SL-Micro/6.0 \*podman\*`
+- `susepkg -p SL-Micro/6.0 -x podman-.*`
+
+## Product list
 
 ```
 $ susepkg -p list
