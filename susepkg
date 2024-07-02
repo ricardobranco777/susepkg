@@ -45,8 +45,9 @@ class Product(UserString):
     @staticmethod
     @cache
     def _get_products() -> list[dict]:
+        headers = {"Accept": "application/vnd.scc.suse.com.v4+json"}
         url = "https://scc.suse.com/api/package_search/products"
-        return get_data(url)
+        return get_data(url, headers=headers)
 
     @classmethod
     def _get_product_id(cls, identifier: str) -> int:
@@ -100,12 +101,16 @@ def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
     return got
 
 
-def get_data(url: str, params: dict[str, str | int] | None = None) -> list[dict]:
+def get_data(
+    url: str,
+    headers: dict[str, str] | None = None,
+    params: dict[str, str | int] | None = None,
+) -> list[dict]:
     """
     Get data from URL
     """
     try:
-        got = session.get(url, params=params, timeout=TIMEOUT)
+        got = session.get(url, headers=headers, params=params, timeout=TIMEOUT)
         got.raise_for_status()
     except RequestException as error:
         logging.error("%s: %s", url, error)
@@ -118,11 +123,12 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     Fetch latest package version for the specified product
     """
     url = "https://scc.suse.com/api/package_search/packages"
+    headers = {"Accept": "application/vnd.scc.suse.com.v4+json"}
     params: dict[str, str | int] = {
         "query": package,
         "product_id": product.id,
     }
-    data = get_data(url, params=params)
+    data = get_data(url, headers=headers, params=params)
 
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
