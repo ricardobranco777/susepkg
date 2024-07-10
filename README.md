@@ -1,3 +1,5 @@
+![Build Status](https://github.com/ricardobranco777/susepkg/actions/workflows/ci.yml/badge.svg)
+
 # susepkg
 
 Show SUSE package versions using [documented API](https://scc.suse.com/api/package_search/v4/documentation)
