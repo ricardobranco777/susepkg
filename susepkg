@@ -156,7 +156,7 @@ def print_version(
     except RequestException:
         sys.exit(1)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=min(10, len(products))) as executor:
         futures = [
             executor.submit(fetch_version, product, package, regex)
             for product in products
