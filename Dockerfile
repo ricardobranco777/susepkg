@@ -6,8 +6,6 @@ RUN	zypper -n install \
 		python3-rpm && \
 	zypper clean -a
 
-COPY	susepkg /susepkg
+COPY	susepkg.py /
 
-VOLUME	/root
-
-ENTRYPOINT ["/usr/bin/python3", "/susepkg"]
+ENTRYPOINT ["/usr/bin/python3", "/susepkg.py"]

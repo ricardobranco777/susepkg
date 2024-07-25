@@ -8,6 +8,8 @@ Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
 
 ## Requirements
 
+podman or docker for Docker image, otherwise:
+
 - Python 3.11+
 - python3-requests
 - python3-rpm

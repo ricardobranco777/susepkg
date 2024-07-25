@@ -1,4 +1,4 @@
-FILES=susepkg
+FILES=susepkg.py
 BIN=$(FILES)
 
 .PHONY: all
