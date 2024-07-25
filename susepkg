@@ -1,0 +1,6 @@
+#!/bin/sh
+
+DOCKER="${DOCKER:-podman}"
+IMAGE="${IMAGE:-ghcr.io/ricardobranco777/susepkg:latest}"
+
+exec "$DOCKER" run --rm -e DEBUG "$IMAGE" "$@"

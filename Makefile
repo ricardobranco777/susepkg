@@ -1,5 +1,5 @@
 FILES=susepkg.py
-BIN=$(FILES)
+BIN=susepkg
 
 .PHONY: all
 all: flake8 pylint mypy black
