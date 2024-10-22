@@ -197,6 +197,21 @@ def get_name(string: str) -> str | None:
     return None
 
 
+def product_string(string: str) -> str:
+    """
+    Normalize product strings
+    """
+    if "Micro" not in string:
+        return string
+    version = string.split("/", 1)[1]
+    if int(version[0]) > 5:
+        return f"SL-Micro/{version}"
+    sub = int(version.split(".", 1)[1])
+    if sub > 2:
+        return f"SLE-Micro/{version}"
+    return f"SUSE-MicroOS/{version}"
+
+
 def main() -> None:
     """
     Main function
@@ -219,6 +234,7 @@ def main() -> None:
         "--product",
         action="append",
         required=True,
+        type=product_string,
         help="product or 'list' or 'any'. May be specified multiple times",
     )
     parser.add_argument(
