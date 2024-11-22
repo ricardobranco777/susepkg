@@ -39,33 +39,62 @@ class Product(UserString):
         self, name: str, id_: int | None = None, arch: str | None = None
     ) -> None:
         self.data = name
-        self.id = id_ or self._get_product_id(f"{name}/{arch}")
+        self.arch = arch
+        self.id: int | None = None
+        if "openSUSE" not in name:
+            self.id = id_ or self._get_product_id(f"{name}/{arch}")
         super().__init__(name)
 
     @staticmethod
     @cache
-    def _get_products() -> list[dict]:
+    def _get_suse_products() -> dict | list[dict]:
         headers = {"Accept": "application/vnd.scc.suse.com.v4+json"}
         url = "https://scc.suse.com/api/package_search/products"
         return get_data(url, headers=headers)
 
     @classmethod
     def _get_product_id(cls, identifier: str) -> int:
-        for product in cls._get_products():
+        for product in cls._get_suse_products():
             if product["identifier"] == identifier:
                 return product["id"]
         raise LookupError(f"Not found: {identifier}")
+
+    @staticmethod
+    @cache
+    def _get_opensuse_products() -> list[dict]:
+        headers = {"Accept": "application/json"}
+        url = "https://get.opensuse.org/api/v0/distributions.json"
+        data = get_data(url, headers=headers, key=None)
+        assert isinstance(data, dict)
+        return [
+            {"name": item["name"].replace(" ", "_"), "version": item["version"]}
+            for key, items in data.items()
+            for i, item in enumerate(items)
+            if item.get("state") == "Stable" or (key == "Tumbleweed" and i == 0)
+        ]
 
     @classmethod
     def get_products(cls, arch: str) -> list["Product"]:
         """
         Get list of products
         """
-        return sorted(
+        products = sorted(
             cls(name=p["identifier"].removesuffix(f"/{arch}"), id_=p["id"], arch=arch)
-            for p in cls._get_products()
+            for p in cls._get_suse_products()
             if p["architecture"] == arch
         )
+        products += sorted(
+            cls(
+                name=(
+                    f'{p["name"]}/{p["version"]}'
+                    if p["name"] != "openSUSE_Tumbleweed"
+                    else p["name"]
+                ),
+                arch=arch,
+            )
+            for p in cls._get_opensuse_products()
+        )
+        return products
 
 
 @total_ordering
@@ -103,9 +132,10 @@ def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
 
 def get_data(
     url: str,
-    headers: dict[str, str] | None = None,
-    params: dict[str, str | int] | None = None,
-) -> list[dict]:
+    headers: dict | None = None,
+    params: dict | None = None,
+    key: str | None = "data",
+) -> dict | list[dict]:
     """
     Get data from URL
     """
@@ -115,20 +145,51 @@ def get_data(
     except RequestException as error:
         logging.error("%s: %s", url, error)
         raise
-    return got.json()["data"]
+    data = got.json()
+    return data[key] if key else data
+
+
+def opensuse_package_info(info: dict) -> dict:
+    """
+    Get openSUSE package info
+    """
+    # Extract version & release from rpm filename
+    version, release = info["file"].rsplit(".", 2)[0].rsplit("-", 2)[1:]
+    return {
+        "name": info["name"],
+        "version": version,
+        "release": release,
+    }
 
 
 def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str]:
     """
     Fetch latest package version for the specified product
     """
-    url = "https://scc.suse.com/api/package_search/packages"
-    headers = {"Accept": "application/vnd.scc.suse.com.v4+json"}
-    params: dict[str, str | int] = {
-        "query": package,
-        "product_id": product.id,
-    }
-    data = get_data(url, headers=headers, params=params)
+    data: dict | list[dict]
+    if product.startswith("openSUSE"):
+        url = "https://mirrorcache.opensuse.org/rest/search/package_locations"
+        headers = {"Accept": "application/json"}
+        params = {
+            "package": package,
+            "official": 1,
+            "arch": product.arch,
+            "os": product.split("/")[0].removeprefix("openSUSE_").replace("_", "-").lower(),
+            "ignore_file": "json",
+        }
+        if "Tumbleweed" not in product:
+            params["os_ver"] = product.split("/")[1]
+        data = [
+            opensuse_package_info(p) for p in get_data(url, headers=headers, params=params)
+        ]
+    else:
+        url = "https://scc.suse.com/api/package_search/packages"
+        headers = {"Accept": "application/vnd.scc.suse.com.v4+json"}
+        params = {
+            "query": package,
+            "product_id": product.id,
+        }
+        data = get_data(url, headers=headers, params=params)
 
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
@@ -189,7 +250,10 @@ def product_string(string: str) -> str:
     """
     Normalize product strings
     """
-    if "Micro" not in string:
+    if string in {"Leap", "Leap_Micro", "Tumbleweed"}:
+        return f"openSUSE_{string}"
+    # Normalize multiple names for SLE Micro
+    if "Micro" not in string or "Leap" in string:
         return string
     version = string.split("/", 1)[1]
     if int(version[0]) > 5:
