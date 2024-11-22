@@ -140,22 +140,10 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     return [f"{product} {name} {rpm_version}" for name, rpm_version in latest.items()]
 
 
-def print_version(
-    package: str, arch: str, regex: re.Pattern, product_list: list[str]
-) -> None:
+def print_version(package: str, regex: re.Pattern, products: list[Product]) -> None:
     """
     Print version
     """
-    try:
-        if len(product_list) == 0:
-            products = Product.get_products(arch)
-        else:
-            products = [Product(name=product, arch=arch) for product in product_list]
-    except LookupError as exc:
-        sys.exit(f"{exc}")
-    except RequestException:
-        sys.exit(1)
-
     with ThreadPoolExecutor(max_workers=min(10, len(products))) as executor:
         futures = [
             executor.submit(fetch_version, product, package, regex)
@@ -259,9 +247,18 @@ def main() -> None:
         package = get_name(args.package)
         if package is None:
             sys.exit(f"Invalid package: {args.package}")
-        print_version(
-            package=package, arch=args.arch, regex=regex, product_list=args.product
-        )
+        try:
+            if len(args.product) == 0:
+                products = Product.get_products(args.arch)
+            else:
+                products = [
+                    Product(name=product, arch=args.arch) for product in args.product
+                ]
+        except LookupError as exc:
+            sys.exit(f"{exc}")
+        except RequestException:
+            sys.exit(1)
+        print_version(package=package, regex=regex, products=products)
 
 
 if __name__ == "__main__":
