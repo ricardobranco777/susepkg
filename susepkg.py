@@ -25,7 +25,7 @@ except ImportError:
 
 
 TIMEOUT = 180
-VERSION = "2.0"
+VERSION = "2.0.1"
 
 session = requests.Session()
 
