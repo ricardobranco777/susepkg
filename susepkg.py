@@ -167,20 +167,26 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     Fetch latest package version for the specified product
     """
     data: dict | list[dict]
+    params: dict
     if product.startswith("openSUSE"):
         url = "https://mirrorcache.opensuse.org/rest/search/package_locations"
         headers = {"Accept": "application/json"}
         params = {
             "package": package,
-            "official": 1,
             "arch": product.arch,
-            "os": product.split("/")[0].removeprefix("openSUSE_").replace("_", "-").lower(),
+            "os": product.split("/")[0]
+            .removeprefix("openSUSE_")
+            .replace("_", "-")
+            .lower(),
             "ignore_file": "json",
         }
-        if "Tumbleweed" not in product:
+        if "/" in product:
             params["os_ver"] = product.split("/")[1]
+        if "Leap" not in product:
+            params["official"] = 1
         data = [
-            opensuse_package_info(p) for p in get_data(url, headers=headers, params=params)
+            opensuse_package_info(p)
+            for p in get_data(url, headers=headers, params=params)
         ]
     else:
         url = "https://scc.suse.com/api/package_search/packages"
