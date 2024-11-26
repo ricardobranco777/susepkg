@@ -173,7 +173,7 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
         headers = {"Accept": "application/json"}
         params = {
             "package": package,
-            "arch": product.arch,
+            # "arch": product.arch,
             "os": product.split("/")[0]
             .removeprefix("openSUSE_")
             .replace("_", "-")
