@@ -172,18 +172,18 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
         url = "https://mirrorcache.opensuse.org/rest/search/package_locations"
         headers = {"Accept": "application/json"}
         params = {
-            "package": package,
             # "arch": product.arch,
+            "ignore_file": "json",
+            "ignore_path": "/repositories/home:",
             "os": product.split("/")[0]
             .removeprefix("openSUSE_")
             .replace("_", "-")
             .lower(),
-            "ignore_file": "json",
+            "official": 1,
+            "package": package,
         }
         if "/" in product:
             params["os_ver"] = product.split("/")[1]
-        if "Leap" not in product:
-            params["official"] = 1
         data = [
             opensuse_package_info(p)
             for p in get_data(url, headers=headers, params=params)
