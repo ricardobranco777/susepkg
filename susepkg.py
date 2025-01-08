@@ -78,11 +78,26 @@ class Product(UserString):
         """
         Get list of products
         """
-        products = sorted(
+
+        def product_sort_key(product: Product):
+            """
+            Group Micro's together
+            """
+            match = re.match(
+                r"(SUSE-MicroOS|SLE-Micro|SL-Micro)/(\d+)\.(\d+)", product.data
+            )
+            if match:
+                prefix, major, minor = match.groups()
+                order = {"SUSE-MicroOS": 1, "SLE-Micro": 2, "SL-Micro": 3}
+                return (1, order[prefix], int(major), int(minor))
+            return (0, product.data)
+
+        products = [
             cls(name=p["identifier"].removesuffix(f"/{arch}"), id_=p["id"], arch=arch)
             for p in cls._get_suse_products()
             if p["architecture"] == arch
-        )
+        ]
+        products.sort(key=product_sort_key)
         products += sorted(
             cls(
                 name=(
