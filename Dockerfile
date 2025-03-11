@@ -1,4 +1,4 @@
-FROM	registry.opensuse.org/opensuse/bci/python:3.11
+FROM	registry.opensuse.org/opensuse/bci/python:latest
 
 RUN	zypper -n install \
 		python3-requests \
