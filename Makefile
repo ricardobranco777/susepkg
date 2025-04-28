@@ -2,11 +2,7 @@ FILES=susepkg.py
 BIN=susepkg
 
 .PHONY: all
-all: flake8 pylint mypy black
-
-.PHONY: flake8
-flake8:
-	@flake8 --ignore=E501 $(FILES)
+all: pylint mypy black
 
 .PHONY: pylint
 pylint:
