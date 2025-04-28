@@ -25,7 +25,7 @@ except ImportError:
 
 
 TIMEOUT = 180
-VERSION = "2.0.2"
+VERSION = "2.0.3"
 
 # Filter by this list of product identifiers
 PRODUCTS = ("SLES/", "SLE-Micro/", "SL-Micro/", "SUSE-MicroOS/")
