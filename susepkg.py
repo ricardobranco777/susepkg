@@ -27,6 +27,9 @@ except ImportError:
 TIMEOUT = 180
 VERSION = "2.0.2"
 
+# Filter by this list of product identifiers
+PRODUCTS = ("SLES/", "SLE-Micro/", "SL-Micro/", "SUSE-MicroOS/")
+
 session = requests.Session()
 
 
@@ -95,7 +98,7 @@ class Product(UserString):
         products = [
             cls(name=p["identifier"].removesuffix(f"/{arch}"), id_=p["id"], arch=arch)
             for p in cls._get_suse_products()
-            if p["architecture"] == arch
+            if p["architecture"] == arch and p["identifier"].startswith(PRODUCTS)
         ]
         products.sort(key=product_sort_key)
         products += sorted(
