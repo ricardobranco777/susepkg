@@ -16,6 +16,10 @@ mypy:
 black:
 	@black --check $(FILES)
 
+.PHONY: shellcheck
+shellcheck:
+	@shellcheck susebats
+
 .PHONY: install
 install:
 	install -m 0755 $(BIN) $(HOME)/bin/
