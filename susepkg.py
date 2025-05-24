@@ -29,6 +29,16 @@ VERSION = "2.0.3"
 
 # Filter by this list of product identifiers
 PRODUCTS = ("SLES/", "SLE-Micro/", "SL-Micro/", "SUSE-MicroOS/")
+EOL = {
+    "SLES/12",
+    "SLES/12.1",
+    "SLES/12.2",
+    "SLES/12.3",
+    "SLES/12.4",
+    "SLES/15",
+    "SLES/15.1",
+    "SUSE-MicroOS/5.0",
+}
 
 session = requests.Session()
 
@@ -98,7 +108,9 @@ class Product(UserString):
         products = [
             cls(name=p["identifier"].removesuffix(f"/{arch}"), id_=p["id"], arch=arch)
             for p in cls._get_suse_products()
-            if p["architecture"] == arch and p["identifier"].startswith(PRODUCTS)
+            if p["architecture"] == arch
+            and p["identifier"].startswith(PRODUCTS)
+            and p["identifier"].removesuffix(f"/{arch}") not in EOL
         ]
         products.sort(key=product_sort_key)
         products += sorted(

@@ -44,14 +44,7 @@ options:
 
 ```
 $ susepkg -p list
-SLES/12
-SLES/12.1
-SLES/12.2
-SLES/12.3
-SLES/12.4
 SLES/12.5
-SLES/15
-SLES/15.1
 SLES/15.2
 SLES/15.3
 SLES/15.4
@@ -59,7 +52,6 @@ SLES/15.5
 SLES/15.6
 SLES/15.7
 SLES/16.0
-SUSE-MicroOS/5.0
 SUSE-MicroOS/5.1
 SUSE-MicroOS/5.2
 SLE-Micro/5.3
