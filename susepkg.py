@@ -186,7 +186,7 @@ def opensuse_package_info(info: dict) -> dict:
     # Extract version & release from rpm filename
     version, release = info["file"].rsplit(".", 2)[0].rsplit("-", 2)[1:]
     return {
-        "name": info["name"],
+        "name": info["file"].split(f"-{version}-{release}")[0],
         "version": version,
         "release": release,
     }
