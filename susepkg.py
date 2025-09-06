@@ -12,6 +12,7 @@ import os
 import sys
 from collections import UserString
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from functools import cache, total_ordering
 
 import rpm  # type: ignore
@@ -150,6 +151,20 @@ class RPMVersion:
         return rpm.labelCompare(self._tuple, other._tuple) == 0
 
 
+@dataclass(frozen=True)
+class Package:
+    """
+    Package class
+    """
+
+    name: str
+    product: str
+    rpm_version: RPMVersion
+
+    def __str__(self) -> str:
+        return f"{self.product}\t{self.name}\t{self.rpm_version}"
+
+
 def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
     """
     Print requests response
@@ -192,7 +207,7 @@ def opensuse_package_info(info: dict) -> dict:
     }
 
 
-def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str]:
+def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[Package]:
     """
     Fetch latest package version for the specified product
     """
@@ -234,7 +249,14 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[str
     ):
         latest[info["name"]] = RPMVersion(info["version"], info["release"])
 
-    return [f"{product} {name} {rpm_version}" for name, rpm_version in latest.items()]
+    return [
+        Package(
+            name=name,
+            product=product.data.removeprefix("openSUSE_"),
+            rpm_version=rpm_version,
+        )
+        for name, rpm_version in latest.items()
+    ]
 
 
 def print_version(package: str, regex: re.Pattern, products: list[Product]) -> None:
@@ -248,9 +270,8 @@ def print_version(package: str, regex: re.Pattern, products: list[Product]) -> N
         ]
         for future in futures:
             try:
-                lines = future.result()
-                for line in lines:
-                    print(line)
+                for item in future.result():
+                    print(item)
             except RequestException:
                 pass
             except Exception as exc:  # pylint: disable=broad-exception-caught
