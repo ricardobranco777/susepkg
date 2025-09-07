@@ -161,9 +161,6 @@ class Package:
     product: str
     rpm_version: RPMVersion
 
-    def __str__(self) -> str:
-        return f"{self.product}\t{self.name}\t{self.rpm_version}"
-
 
 def debugme(got, *args, **kwargs):  # pylint: disable=unused-argument
     """
@@ -259,23 +256,34 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[Pac
     ]
 
 
-def print_version(package: str, regex: re.Pattern, products: list[Product]) -> None:
+def print_version(
+    package_name: str, regex: re.Pattern, products: list[Product]
+) -> None:
     """
     Print version
     """
+    packages = []
     with ThreadPoolExecutor(max_workers=min(10, len(products))) as executor:
         futures = [
-            executor.submit(fetch_version, product, package, regex)
+            executor.submit(fetch_version, product, package_name, regex)
             for product in products
         ]
         for future in futures:
             try:
-                for item in future.result():
-                    print(item)
+                for package in future.result():
+                    packages.append(package)
             except RequestException:
                 pass
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 print(f"ERROR: {exc}", file=sys.stderr)
+    package_width = 0
+    product_width = 0
+    for package in packages:
+        package_width = max(package_width, len(package.name))
+        product_width = max(product_width, len(package.product))
+    fmt = f"{{:{product_width}}}  {{:{package_width}}}  {{}}"
+    for package in packages:
+        print(fmt.format(package.product, package.name, package.rpm_version))
 
 
 def get_regex(
@@ -379,7 +387,7 @@ def main() -> None:
             sys.exit(f"{exc}")
         except RequestException:
             sys.exit(1)
-        print_version(package=package, regex=regex, products=products)
+        print_version(package_name=package, regex=regex, products=products)
 
 
 if __name__ == "__main__":
