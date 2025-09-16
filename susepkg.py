@@ -320,18 +320,21 @@ def product_string(string: str) -> str:
     # Normalize multiple names for SLE Micro
     if "Micro" not in string or "Leap" in string:
         return string
-    version = string.split("/", 1)[1]
-    if int(version[0]) > 5:
-        return f"SL-Micro/{version}"
+    try:
+        version = string.split("/", 1)[1]
+        if int(version[0]) > 5:
+            return f"SL-Micro/{version}"
+    except IndexError:
+        return string
     sub = int(version.split(".", 1)[1])
     if sub > 2:
         return f"SLE-Micro/{version}"
     return f"SUSE-MicroOS/{version}"
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
     """
-    Main function
+    Parse args
     """
     parser = argparse.ArgumentParser(
         prog="susepkg",
@@ -362,32 +365,49 @@ def main() -> None:
         "package", nargs="?", help="may be a shell pattern or regular expression"
     )
     args = parser.parse_args()
-
     if args.product == ["list"]:
         for product in Product.get_products(args.arch):
             print(product)
+        sys.exit(0)
     elif not args.package:
         parser.print_help()
         sys.exit(1)
-    else:
-        if args.product == ["any"]:
-            args.product.pop()
-        regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
-        package = get_name(args.package)
-        if package is None:
-            sys.exit(f"Invalid package: {args.package}")
-        try:
-            if len(args.product) == 0:
-                products = Product.get_products(args.arch)
-            else:
-                products = [
-                    Product(name=product, arch=args.arch) for product in args.product
-                ]
-        except LookupError as exc:
-            sys.exit(f"{exc}")
-        except RequestException:
-            sys.exit(1)
-        print_version(package_name=package, regex=regex, products=products)
+    return args
+
+
+def main() -> None:
+    """
+    Main function
+    """
+    args = parse_args()
+    if args.product == ["any"]:
+        args.product.pop()
+    regex = get_regex(args.package, ignore_case=args.insensitive, regex=args.regex)
+    package = get_name(args.package)
+    if package is None:
+        sys.exit(f"Invalid package: {args.package}")
+    try:
+        products = []
+        all_products = Product.get_products(args.arch)
+        if len(args.product) == 0:
+            products = all_products
+        else:
+            for abbrev in args.product:
+                # exact match first
+                matched = [p for p in all_products if p.data == abbrev]
+                if not matched:
+                    # fallback: substring match (case-insensitive)
+                    matched = [
+                        p for p in all_products if abbrev.lower() in p.data.lower()
+                    ]
+                if not matched:
+                    sys.exit(f"No matching product for: {abbrev}")
+                products.extend(matched)
+    except LookupError as exc:
+        sys.exit(f"{exc}")
+    except RequestException:
+        sys.exit(1)
+    print_version(package_name=package, regex=regex, products=products)
 
 
 if __name__ == "__main__":

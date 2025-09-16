@@ -37,6 +37,9 @@ options:
 ## Example usage
 
 - `susepkg -p any podman`
+- `susepkg -p weed podman`
+- `susepkg -p Micro podman`
+- `susepkg -p SLES podman`
 - `susepkg -p SL-Micro/6.0 \*podman\*`
 - `susepkg -p SL-Micro/6.0 -x podman-.*`
 
