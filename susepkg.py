@@ -38,6 +38,8 @@ EOL = {
     "SLES/12.4",
     "SLES/15",
     "SLES/15.1",
+    "SLES/15.2",
+    "SLES/15.3",
     "SUSE-MicroOS/5.0",
     "SUSE-MicroOS/5.1",
 }
