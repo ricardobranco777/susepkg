@@ -241,6 +241,7 @@ def fetch_version(product: Product, package: str, regex: re.Pattern) -> list[Pac
             "product_id": product.id,
         }
         data = get_data(url, headers=headers, params=params)
+        data = [i for i in data if i["products"][0]["name"] != "SUSE Package Hub"]
 
     latest: dict[str, RPMVersion] = {}
     for info in sorted(
