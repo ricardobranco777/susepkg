@@ -45,6 +45,7 @@ EOL = {
 }
 
 session = requests.Session()
+session.headers.update({"User-Agent": "susepkg"})
 
 
 class Product(UserString):
