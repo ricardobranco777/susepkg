@@ -42,6 +42,7 @@ EOL = {
     "SLES/15.3",
     "SUSE-MicroOS/5.0",
     "SUSE-MicroOS/5.1",
+    "SUSE-MicroOS/5.2",
 }
 
 session = requests.Session()
