@@ -29,4 +29,4 @@ if [ "$1" = "--version" ] ; then
 	fi
 fi
 
-exec "$SUDO" "$RUNTIME" run --rm -e DEBUG "$IMAGE" "$@"
+exec "$SUDO" "$RUNTIME" run --rm --security-opt no-new-privileges -e DEBUG "$IMAGE" "$@"
