@@ -47,4 +47,4 @@ if [ -n "$SUDO" ]; then
 	SUDO="$SUDO --preserve-env=DEBUG"
 fi
 
-exec $SUDO "$RUNTIME" run "${opts[@]}" --security-opt no-new-privileges -e DEBUG "$IMAGE" "$@"
+exec $SUDO "$RUNTIME" run "${opts[@]}" -e DEBUG "$IMAGE" "$@"
