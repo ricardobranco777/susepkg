@@ -2,6 +2,9 @@
 
 # susepkg
 
+> [!NOTE]
+> This project has been rewritten in Go as [go-susepkg](https://github.com/ricardobranco777/go-susepkg): same options and output, as a single static binary with no Python or librpm dependency. New development happens there.
+
 Show SUSE package versions using [documented API](https://scc.suse.com/api/package_search/v4/documentation)
 
 Docker image available at `ghcr.io/ricardobranco777/susepkg:latest`
